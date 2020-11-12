@@ -1,0 +1,105 @@
+<style>
+  h1 {
+    text-align: center;
+  }
+
+  .soundboard {
+    align-items: center;
+    background-color: var(--pink);
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, 120px);
+    justify-content: center;
+    margin: 1rem auto 3rem;
+    max-width: 90vw;
+    padding: 1rem;
+    width: 500px;
+  }
+
+  .sound {
+    background: var(--white);
+    border: 2px solid var(--black);
+    color: var(--black);
+    display: block;
+    padding: 1rem;
+  }
+</style>
+
+<h1>Realtime Firebase Soundboard</h1>
+
+<div class="soundboard"></div>
+
+<!-- The core Firebase JS SDK is always required and must be listed first -->
+<script src="https://www.gstatic.com/firebasejs/8.0.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.0.1/firebase-storage.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.0.1/firebase-firestore.js"></script>
+
+<script>
+  async function init() {
+    const firebaseConfig = {
+      apiKey: 'AIzaSyCZXbuBWBQmk3mkc7INeVCe_KfMRqQBAE8',
+      authDomain: 'davidlearnswithjason.firebaseapp.com',
+      databaseURL: 'https://davidlearnswithjason.firebaseio.com',
+      projectId: 'davidlearnswithjason',
+      storageBucket: 'davidlearnswithjason.appspot.com',
+      messagingSenderId: '696482521301',
+      appId: '1:696482521301:web:156eafcf1decd5185f025c',
+      measurementId: 'G-NDD9PSJM6R',
+    };
+
+    const firebaseApp = firebase.initializeApp(firebaseConfig);
+
+    const storage = firebaseApp.storage();
+    const soundsRef = storage.ref('sounds');
+
+    const { items } = await soundsRef.listAll();
+    const sounds = {};
+    for (item of items) {
+      const name = item.name.replace('.mp3', '');
+      const url = await item.getDownloadURL();
+
+      sounds[name] = { name, url };
+    }
+
+    const soundboard = document.querySelector('.soundboard');
+    Object.values(sounds).forEach((sound) => {
+      const button = document.createElement('button');
+      button.classList.add('sound');
+      button.dataset.name = sound.name;
+      button.textContent = sound.name;
+
+      soundboard.appendChild(button);
+    });
+
+    function addSoundToQueue(event) {
+      event.preventDefault();
+
+      const btn = event.target;
+      const soundName = btn.dataset.name;
+
+      // TODO stuff
+      firebaseApp.firestore().collection('queue').add({
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        filename: soundName,
+        played: false,
+      });
+    }
+
+    document.querySelectorAll('.sound').forEach((btn) => {
+      btn.addEventListener('click', addSoundToQueue);
+    });
+
+    // load the queue and play unplayed sounds
+    const query = firebaseApp
+      .firestore()
+      .collection('queue')
+      .orderBy('timestamp');
+
+    query.onSnapshot((snapshot) => {
+      const queue = snapshot.docs.map((doc) => doc.data());
+      console.log({ queue });
+    });
+  }
+
+  init();
+</script>
