@@ -2,6 +2,7 @@
   command = "npm run build"
   publish = "_site"
   functions = "functions"
+  base = "site"
 
 [dev]
   command = "npm run dev"
