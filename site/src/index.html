@@ -93,11 +93,28 @@
     const query = firebaseApp
       .firestore()
       .collection('queue')
-      .orderBy('timestamp');
+      .orderBy('timestamp')
+      .where('played', '==', false)
+      .limit(10);
 
     query.onSnapshot((snapshot) => {
-      const queue = snapshot.docs.map((doc) => doc.data());
-      console.log({ queue });
+      const queue = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // TODO create and play audio element
+      queue.forEach((soundEffect) => {
+        const audio = new Audio(sounds[soundEffect.filename].url);
+        audio.play();
+
+        firebaseApp
+          .firestore()
+          .collection('queue')
+          .doc(soundEffect.id)
+          .update({ played: true });
+      });
+      // TODO update Firestore to "played: true"
     });
   }
 
